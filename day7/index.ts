@@ -151,6 +151,29 @@ const part1 = () => {
 
 // part1(); // 251545216
 
+function mostFrequent(input: number[], except = 1) {
+  const arr = input.filter((item) => item !== except);
+  const n = arr.length;
+  // Insert all elements in hash.
+  var hash = new Map();
+  for (var i = 0; i < n; i++) {
+    if (hash.has(arr[i])) hash.set(arr[i], hash.get(arr[i]) + 1);
+    else hash.set(arr[i], 1);
+  }
+
+  // find the max frequency
+  var max_count = 0,
+    res = -1;
+  hash.forEach((value, key) => {
+    if (max_count < value) {
+      res = key;
+      max_count = value;
+    }
+  });
+
+  return res;
+}
+
 const hands2: Hand[] = input.map((line) => {
   const [cards, bid] = line.split(" ");
   return {
@@ -163,17 +186,21 @@ const hands2: Hand[] = input.map((line) => {
 const getHandType2 = (hand: Hand): HandType => {
   // now jokers counts as joker and as all any other card
   const cardCounts = hand.cards.reduce((acc, card) => {
-    acc[card] = acc[card] ? acc[card] + 1 : 1;
     if (card === 1) {
       // joker
-      for (let i = 2; i <= 14; i++) {
-        // ignore the 11 they are joker dupes
-        acc[i] = acc[i] ? acc[i] + 1 : 1;
-      }
+      // then the joker counts as the card there is the most of
+      const mostFrequentCard = mostFrequent(hand.cards);
+      acc[mostFrequentCard] = acc[mostFrequentCard]
+        ? acc[mostFrequentCard] + 1
+        : 1;
+    } else {
+      acc[card] = acc[card] ? acc[card] + 1 : 1;
     }
+
     return acc;
   }, {} as Record<number, number>);
 
+  //   console.log(cardCounts, hand.originalCards);
   const cardCountValues = Object.values(cardCounts);
 
   if (cardCountValues.includes(5)) {
@@ -216,11 +243,9 @@ const part2 = () => {
     if (isHand1BetterThanHand2(hand1, hand2)) {
       return 1;
     }
-
     if (isHand1BetterThanHand2(hand2, hand1)) {
       return -1;
     }
-
     return 0;
   });
 
@@ -242,4 +267,4 @@ const part2 = () => {
   return totalWinnings;
 };
 
-part2(); // 251042416 WRONG ???
+part2(); // 250384185

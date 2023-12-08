@@ -4,6 +4,8 @@ const file = Bun.file(path);
 const text = await file.text();
 const input = text.split("\n");
 
+const MAX_STEPS_TEST = 1_000_000;
+
 interface Node {
   L: string;
   R: string;
@@ -57,16 +59,47 @@ const part1 = () => {
 
 // part1(); // 24253
 
-const part2 = () => {
+const part2Optimised = (isTest = false) => {
+  const tick = performance.now();
+  const endingNodesSet = new Set(
+    Object.keys(nodes).filter((n) => n.endsWith("Z"))
+  );
+  let currentNodes = Object.keys(nodes)
+    .filter((n) => n.endsWith("A"))
+    .map((id) => nodes[id]);
+  let steps = 0;
+  let hasArrived = false;
+
+  while (!hasArrived || (isTest && steps < MAX_STEPS_TEST)) {
+    const instruction = instructions[steps % instructions.length];
+    hasArrived = true;
+
+    for (let i = 0; i < currentNodes.length; i++) {
+      const nextNodeId = currentNodes[i][instruction];
+      currentNodes[i] = nodes[nextNodeId];
+
+      if (!endingNodesSet.has(currentNodes[i].id)) {
+        hasArrived = false;
+      }
+    }
+
+    steps++;
+  }
+  const tock = performance.now();
+  console.log("time", tock - tick);
+  console.log("steps", steps);
+  return tock - tick;
+};
+
+const part2 = (isTest = false) => {
+  const tick = performance.now();
   const startingNodesId = Object.keys(nodes).filter((n) => n[2] === "A");
-  const endingNodesId = Object.keys(nodes).filter((n) => n[2] === "Z");
   let hasArrived = false;
   let currentNodes = startingNodesId.map((id) => nodes[id]);
   let steps = 0;
 
-  while (!hasArrived) {
+  while (!hasArrived || (isTest && steps < MAX_STEPS_TEST)) {
     for (const instruction of instructions) {
-      console.log("STEP N°", steps);
       steps++;
       let nextNodes = [];
 
@@ -80,13 +113,32 @@ const part2 = () => {
 
       currentNodes = nextNodes;
 
-      hasArrived = currentNodes.every((n) => endingNodesId.includes(n.id));
+      hasArrived = currentNodes.every((n) => n.id.endsWith("Z"));
       if (hasArrived) {
         break;
       }
     }
   }
+  const tock = performance.now();
+  console.log("time", tock - tick);
   console.log("steps", steps);
+  return tock - tick;
 };
+
+function compareSpeeds() {
+  const times = 100;
+  let sumPart2 = 0;
+  let sumPart2Optimised = 0;
+  for (let i = 0; i < times; i++) {
+    sumPart2 += part2(true);
+    sumPart2Optimised += part2Optimised(true);
+  }
+  console.log("average part2", sumPart2 / times);
+  console.log("average part2Optimised", sumPart2Optimised / times);
+}
+
+// compareSpeeds();
+// average part2 104.29280498000018
+// average part2FurtherOptimised 159.87224425000014
 
 part2();
